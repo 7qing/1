@@ -1259,21 +1259,31 @@ static int __ref kernel_init(void *unused)
 	 * The Bourne shell can be used instead of init if we are
 	 * trying to recover a really broken machine.
 	 */
+	/*
+	* 我们依次尝试这些命令，直到有一个成功为止。
+	*
+	* 如果我们正在尝试恢复一台严重损坏的机器，可以使用 Bourne shell 代替 init。
+	*/
 	if (execute_command) {
+		// 如果有指定执行的命令，尝试运行它
 		ret = run_init_process(execute_command);
 		if (!ret)
 			return 0;
+		// 如果命令执行失败，打印错误信息并尝试默认的 init 进程
 		pr_err("Failed to execute %s (error %d).  Attempting defaults...\n",
 			execute_command, ret);
 	}
+
+	// 依次尝试运行默认的 init 进程，如果有一个成功则返回 0
 	if (!try_to_run_init_process("/sbin/init") ||
-	    !try_to_run_init_process("/etc/init") ||
-	    !try_to_run_init_process("/bin/init") ||
-	    !try_to_run_init_process("/bin/sh"))
+		!try_to_run_init_process("/etc/init") ||
+		!try_to_run_init_process("/bin/init") ||
+		!try_to_run_init_process("/bin/sh"))
 		return 0;
 
+	// 如果所有 init 进程都无法运行，触发 panic 并提示用户传递 init= 选项
 	panic("No working init found.  Try passing init= option to kernel. "
-	      "See Linux Documentation/init.txt for guidance.");
+		"See Linux Documentation/init.txt for guidance.");
 }
 
 static noinline void __init kernel_init_freeable(void)
@@ -1281,18 +1291,28 @@ static noinline void __init kernel_init_freeable(void)
 	/*
 	 * Wait until kthreadd is all set-up.
 	 */
+	 /*
+     * 等待 kthreadd 完全设置好。
+     */
 	wait_for_completion(&kthreadd_done);
 
 	/* Now the scheduler is fully set up and can do blocking allocations */
+	/* 现在调度程序已完全设置，可以进行阻塞分配 */
 	gfp_allowed_mask = __GFP_BITS_MASK;
 
 	/*
 	 * init can allocate pages on any node
 	 */
+	/*
+     * init 可以在任何节点上分配页面
+     */
 	set_mems_allowed(node_states[N_MEMORY]);
 	/*
 	 * init can run on any cpu.
 	 */
+	/*
+     * init 可以在任何 CPU 上运行。
+     */
 	set_cpus_allowed_ptr(current, cpu_all_mask);
 
 	cad_pid = task_pid(current);
@@ -1308,6 +1328,7 @@ static noinline void __init kernel_init_freeable(void)
 	do_basic_setup();
 
 	/* Open the /dev/console on the rootfs, this should never fail */
+	/* 在 rootfs 上打开 /dev/console，这不应该失败 */
 	if (sys_open((const char __user *) "/dev/console", O_RDWR, 0) < 0)
 		pr_err("Warning: unable to open an initial console.\n");
 
@@ -1317,6 +1338,9 @@ static noinline void __init kernel_init_freeable(void)
 	 * check if there is an early userspace init.  If yes, let it do all
 	 * the work
 	 */
+	 /*
+     * 检查是否存在早期用户空间的 init。如果有，让它处理所有工作
+     */
 
 	if (!ramdisk_execute_command)
 		ramdisk_execute_command = "/init";
@@ -1331,7 +1355,10 @@ static noinline void __init kernel_init_freeable(void)
 	 * we're essentially up and running. Get rid of the
 	 * initmem segments and start the user-mode stuff..
 	 */
-
+	/*
+     * 好的，我们已经完成了初始引导，并且
+     * 我们基本上已经启动并运行了。清理 initmem 段并启动用户模式的工作。
+     */
 	/* rootfs is available now, try loading default modules */
 	load_default_modules();
 }
